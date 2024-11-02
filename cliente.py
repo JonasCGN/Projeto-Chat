@@ -1,7 +1,7 @@
 import socket
 import sys
 
-SERVER_POST = 8080
+SERVER_POST = 9000
 BUFFER = 1024
 
 def connecting():
