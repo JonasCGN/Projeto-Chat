@@ -1,10 +1,11 @@
 import socket
 import sys
 
+# ADDRESS = "0.tcp.sa.ngrok.io"
+# SERVER_POST = 18622
 SERVER_POST = 9000
 BUFFER = 1024
 ADDRESS = "127.0.0.1"
-
 class Cliente:
 
     def __init__(self):
@@ -12,7 +13,6 @@ class Cliente:
         self.name = ""
         
     def __call__(self):
-
         try:
             destination = (ADDRESS, SERVER_POST)
             self.tcp_connection.connect(destination)
