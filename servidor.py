@@ -54,7 +54,7 @@ class Servidor:
     def __init__(self):
         self.addr = (HOST, PORT)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientes: list[Cliente] = {}
+        self.clientes: dict[Cliente] = {}
         self.banidos = []
 
     def __call__(self):
@@ -76,12 +76,12 @@ class Servidor:
                 cliente.cliente_socket.send(msg.encode())
 
     def tread_msg_users(self, cliente_socket: socket.socket, client_addr):
-        banido = False
         while True:
             if self.clientes[cliente_socket].palavroes_falados():
                 print(f"{client_addr}: Desconectado (banned)")
-                banido = True
+                self.banidos.append(client_addr)
                 break
+            
             try:
                 self.tratamento_msg(cliente_socket)
             except ConnectionAbortedError:
@@ -92,8 +92,6 @@ class Servidor:
                 break
             
         self.remove_cliente(cliente_socket)
-        if banido:
-            cliente_socket.close()
 
     def thread_connect_users(self):
         while True:
@@ -108,6 +106,7 @@ class Servidor:
                 
                 log = f"Cliente {client_addr} conectado."
                 client_socket.send("accept".encode())
+                
                 threading.Thread(
                     target=self.tread_msg_users, args=(client_socket, client_addr)
                 ).start()
@@ -120,6 +119,7 @@ class Servidor:
 
     def remove_cliente(self, cliente):
         self.clientes.pop(cliente)
+        cliente.close()
         
 if __name__ == "__main__":
     Servidor()()
