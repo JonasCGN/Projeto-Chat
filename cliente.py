@@ -5,8 +5,31 @@ SERVER_POST = 9000
 BUFFER = 1024
 ADDRESS = "127.0.0.1"
 
-
 class Cliente:
+
+    def __init__(self):
+        self.tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.name = ""
+        
+    def __call__(self):
+
+        try:
+            destination = (ADDRESS, SERVER_POST)
+            self.tcp_connection.connect(destination)
+            
+            while True:
+                self.name = input("Seu username: ")
+                if self.name != "":
+                    break
+                            
+            self.tcp_connection.send(bytes(self.name, "utf-8"))
+            self.escutar_mensagem(self.tcp_connection)
+            
+            self.menu()
+            
+        except ConnectionError as error:
+            print("Conexão encerrada\nErro:", error)
+            sys.exit()
 
     def enviar_mensagem(self, address):
         while True:
@@ -33,49 +56,42 @@ class Cliente:
                     print("Conexão encerrada")
                     break
                 else:
-                    print(f"Server: {recv_msg}")
+                    if recv_msg == "accept":
+                        print("Conexão aceita")
+                    else:
+                        print(f"Server: {recv_msg}")
                     break
 
     def enviar_e_escutar_mensagem(self, address):
-
+        self.enviar_mensagem(address)
+        self.escutar_mensagem(address)
+    
+    def close_connection(self,address):
+        address.send(bytes(f"{self.name}, exit", "utf-8"))
+        address.close()
+        
+    def menu(self):
         while True:
-            self.enviar_mensagem(address)
-            self.escutar_mensagem(address)
-
-
-def start_connection(ip_address):
-
-    tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-    try:
-        destination = (ip_address, SERVER_POST)
-        tcp_connection.connect(destination)
-        name = input("Seu username: ")
-        tcp_connection.send(bytes(name, "utf-8"))
-    except ConnectionError as error:
-        print("Conexão encerrada\nErro:", error)
-
-    return tcp_connection
-
-
-def close_connection(tcp_connection):
-    tcp_connection.close()
-
-def conversation(tcp_connection):
-
-    cliente = Cliente()
-    cliente.enviar_e_escutar_mensagem(tcp_connection)
-
-    close_connection(tcp_connection)
-
-
+            print("1 - Enviar mensagem")
+            print("2 - Escutar mensagem")
+            print("3 - Enviar e Escutar mensagem")
+            print("0 - Sair")
+        
+            option = input("Opção: ")   
+            
+            if option == "0":
+                self.close_connection(self.tcp_connection)
+                break
+            elif option == "1":
+                self.enviar_mensagem(self.tcp_connection)
+            elif option == "2":
+                self.escutar_mensagem(self.tcp_connection)
+            elif option == "3":
+                self.enviar_e_escutar_mensagem(self.tcp_connection)
+            else:
+                print("Opção inválida")
+        
 if __name__ == "__main__":
 
-    print("Conexão iniciada")
-    tcp_connection = start_connection(ADDRESS)
-    conversation(tcp_connection)
-
-    try:
-        close_connection(tcp_connection)
-    except ConnectionError as error:
-        print("Conexão encerrada\nErro:", error)
+    Cliente()()
+    

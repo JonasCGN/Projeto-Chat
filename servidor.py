@@ -28,7 +28,6 @@ class Cliente:
         self.cliente_socket = cliente_socket
         self.user_name = user_name
 
-
 class Servidor:
 
     def __init__(self):
@@ -47,6 +46,7 @@ class Servidor:
     def tratamento_msg(self, cliente_socket):
         data = cliente_socket.recv(BUFFER)
         text_data: str = data.decode()
+        
         name, msg = text_data.split(", ")
 
         for cliente in self.clientes:
@@ -54,6 +54,7 @@ class Servidor:
                 cliente.cliente_socket.send(msg.encode())
 
     def tread_msg_users(self, cliente_socket: socket.socket, client_addr):
+        
         while True:
             try:
                 self.tratamento_msg(cliente_socket)
@@ -63,6 +64,8 @@ class Servidor:
             except ConnectionResetError:
                 print(f"{client_addr}: Desconectado (reset)")
                 break
+        
+        self.remove_cliente(client_addr)
 
     def thread_connect_users(self):
         while True:
@@ -74,15 +77,22 @@ class Servidor:
                 cliente_atual = Cliente(client_addr, client_socket, name)
                 self.clientes.append(cliente_atual)
                 log = f"Cliente {client_addr} conectado."
+                client_socket.send("accept".encode())
                 threading.Thread(
                     target=self.tread_msg_users, args=(client_socket, client_addr)
                 ).start()
             else:
                 log = f"Cliente {client_addr} recusado. Limite de conexões atingido."
+                client_socket.send("exit".encode())
                 client_socket.close()
 
             print(log)
 
-
+    def remove_cliente(self, cliente):
+        
+        for i in self.clientes:
+            if i.client_addr == cliente:
+                self.clientes.remove(i)
+            
 if __name__ == "__main__":
     Servidor()()
