@@ -3,24 +3,47 @@ import sys
 
 SERVER_POST = 9000
 BUFFER = 1024
+ADDRESS = '127.0.0.1'
 
-def connecting():
+class Cliente:
     
-    value = input('Digite o endereço de IP: ')
+    def enviar_mensagem(self,address):
+        while True:
+            username = input("Username: ")
+            if username != '':
+                mensagem = input("Voce: ")
+                
+                if mensagem != '':
+                    mensagem = f'{username}, {mensagem}'
+                    
+                    address.send(bytes(mensagem, 'utf-8'))
+                    if mensagem == 'exit':
+                        print('Conexão encerrada')
+                    break
+            else:
+                print('Username inválido')
+                
     
-    return start_connection(value)
-
-def checking_ip_address(ip_address):
-    
-    if len(ip_address) == 9 and ip_address is not None:
-        return True
-    
-    print('Endereço de IP inválido')
-    exit()
-    
+    def escutar_mensagem(self,address):
+        while True:
+            recv_msg = address.recv(BUFFER).decode('ascii')
+                
+            if recv_msg != '':
+                if recv_msg == 'exit':
+                    print('Conexão encerrada')
+                    break
+                else:
+                    print(f'Server: {recv_msg}')
+                    break
+        
+    def enviar_e_escutar_mensagem(self,address):
+        
+        while True:
+            self.enviar_mensagem(address)
+            self.escutar_mensagem(address)
+                
 def start_connection(ip_address):
     
-    checking_ip_address(ip_address)
     tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     try:
@@ -36,30 +59,15 @@ def close_connection(tcp_connection):
     
 def conversation(tcp_connection):
         
-        while True:
-            mensagem = input("Voce: ")
-            
-            if mensagem != '':
-                tcp_connection.send(bytes(mensagem, 'utf-8'))
-                if mensagem == 'exit':
-                    print('Conexão encerrada')
-                    break
-            
-            recv_msg = tcp_connection.recv(BUFFER).decode('ascii')
-            
-            if recv_msg != '':
-                if recv_msg == 'exit':
-                    print('Conexão encerrada')
-                    break
-                else:
-                    print(f'Server: {recv_msg}')
-    
+        cliente = Cliente()
+        cliente.enviar_e_escutar_mensagem(tcp_connection)
+               
         close_connection(tcp_connection)     
         
 if __name__ == '__main__':
     
     print('Conexão iniciada')
-    tcp_connection = connecting()
+    tcp_connection = start_connection(ADDRESS)
     conversation(tcp_connection)
     
     try:
