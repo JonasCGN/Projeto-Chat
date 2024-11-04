@@ -1,11 +1,11 @@
 import socket
 import sys
 
-ADDRESS = "0.tcp.sa.ngrok.io"
-SERVER_POST = 18622
-# SERVER_POST = 9000
+# ADDRESS = "0.tcp.sa.ngrok.io"
+# SERVER_POST = 18842
+SERVER_POST = 9000
 BUFFER = 1024
-# ADDRESS = "127.0.0.1"
+ADDRESS = "127.0.0.1"
 
 class Cliente:
 

@@ -45,9 +45,10 @@ class TratamentoDeMensagem:
         return message
 
 class Cliente:
-    def __init__(self, cliente_socket, cliente_addrs) -> None:
+    def __init__(self, cliente_socket, cliente_addrs,user_name) -> None:
         self.cliente_socket: socket.socket = cliente_socket
         self.cliente_addrs = cliente_addrs
+        self.name = user_name
         self.data_palavroes: list[datetime.datetime] = []
         self.tratamento_msg = TratamentoDeMensagem()
 
@@ -80,10 +81,10 @@ class Servidor:
     def clientes(self):
         return self._clientes
 
-    def is_banned(self, cliente_addrs):
+    def is_banned(self, name):
         is_ok = False
         
-        if cliente_addrs[0] in [cliente for cliente in self.banidos]:
+        if name in [cliente for cliente in self.banidos]:
             is_ok = True
             
         return is_ok
@@ -99,14 +100,14 @@ class Servidor:
         if user_name in self.clientes:
             is_add = False
         else:
-            self.clientes[user_name] = Cliente(cliente_socket, cliente_addrs)
+            self.clientes[user_name] = Cliente(cliente_socket, cliente_addrs,user_name)
         return is_add
 
     def connect_user(self):
         client_socket, client_addr = self.server_socket.accept()
         name = client_socket.recv(BUFFER).decode()
 
-        if self.is_banned(client_addr):
+        if self.is_banned(name):
             client_socket.send("disconnected: Voce foi banido!".encode())
             client_socket.close()
 
@@ -137,10 +138,9 @@ class Servidor:
             for nome_cliente, cliente_destino in self.clientes.items():
                 if nome_cliente == nome_recebido:
                     if cliente_send.palavroes_falados():
-                        self.banidos.append(cliente_send.cliente_addrs[0])
-                        
+                        self.banidos.append(cliente_send.name)
                         cliente_send.cliente_socket.send("banned".encode())
-                        print(f"Cliente {cliente_send.cliente_addrs[0]} foi banido.")
+                        print(f"Cliente {cliente_send.name} foi banido.")
                         raise ConnectionAbortedError
                         
                     cliente_destino.cliente_socket.send(mensagem.encode())
