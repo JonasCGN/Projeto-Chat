@@ -7,7 +7,6 @@ SERVER_POST = 9000
 BUFFER = 1024
 ADDRESS = "127.0.0.1"
 
-
 class Cliente:
 
     def __init__(self):

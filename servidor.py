@@ -58,9 +58,9 @@ class Cliente:
 
     def palavroes_falados(self):
         fim = datetime.datetime.now()
-        inicio = fim - datetime.timedelta(minutes=3)
-        return len([data for data in self.data_palavroes if inicio <= data <= fim])
-
+        inicio = fim - datetime.timedelta(minutes=1)
+        
+        return len([data for data in self.data_palavroes if inicio <= data <= fim]) >= 3
 
 class Servidor:
 
@@ -147,7 +147,6 @@ class Servidor:
         except (ConnectionResetError, ConnectionAbortedError):
             print(f"Cliente {cliente.cliente_addrs} desconectado.")
             self.clientes.pop(name_send)
-
 
 if __name__ == "__main__":
     servidor = Servidor()

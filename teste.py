@@ -1,10 +1,7 @@
-import datetime
 
-fim = datetime.datetime.now()
-        inicio = fim - datetime.timedelta(minutes=1)
+def listaMaior3(lista):
+    return len(lista)  > 3
 
-        utimos_3_minutos = self.data_palavroes[-3:]
-        if 
-        
+lista = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-        return len(resultado)
+print(listaMaior3(lista)) # True
