@@ -41,20 +41,21 @@ class Cliente:
             if msg_recebida == 'banned':
                 self.ativo = False
                 address.close()
+            else:
+                while True:
+                    username = input("Username: ")
+                    if username != "":
+                        mensagem = input("Voce: ")
 
+                        if mensagem != "":
+                            mensagem = f"{username}, {mensagem}"
+                            address.send(bytes(mensagem, "utf-8"))
+                            
+                            break
+                    else:
+                        print("Username inválido")
         except (socket.timeout, OSError):
-            while True:
-                username = input("Username: ")
-                if username != "":
-                    mensagem = input("Voce: ")
-
-                    if mensagem != "":
-                        mensagem = f"{username}, {mensagem}"
-                        address.send(bytes(mensagem, "utf-8"))
-                        
-                        break
-                else:
-                    print("Username inválido")
+            pass
 
     def escutar_mensagem(self, address):
         try:
@@ -64,7 +65,6 @@ class Cliente:
             if recv_msg == 'banned':
                 self.ativo = False
                 address.close()
-
             else:
                 if recv_msg != "":
                     if recv_msg == "exit":
@@ -75,7 +75,7 @@ class Cliente:
                         else:
                             print(f"Server: {recv_msg}")
         except (socket.timeout, OSError):
-            print("Tempo limite excedido")
+            pass
 
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
