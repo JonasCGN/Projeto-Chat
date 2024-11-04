@@ -41,21 +41,22 @@ class Cliente:
             if msg_recebida == 'banned':
                 self.ativo = False
                 address.close()
-            else:
-                while True:
-                    username = input("Username: ")
-                    if username != "":
-                        mensagem = input("Voce: ")
-
-                        if mensagem != "":
-                            mensagem = f"{username}, {mensagem}"
-                            address.send(bytes(mensagem, "utf-8"))
-                            
-                            break
-                    else:
-                        print("Username inválido")
+                return
         except (socket.timeout, OSError):
             pass
+        
+        while True:
+            username = input("Username: ")
+            if username != "":
+                mensagem = input("Voce: ")
+
+                if mensagem != "":
+                    mensagem = f"{username}, {mensagem}"
+                    address.send(bytes(mensagem, "utf-8"))
+                    
+                    break
+            else:
+                print("Username inválido")
 
     def escutar_mensagem(self, address):
         try:
@@ -65,18 +66,20 @@ class Cliente:
             if recv_msg == 'banned':
                 self.ativo = False
                 address.close()
-            else:
-                if recv_msg != "":
-                    if recv_msg == "exit":
-                        print("Conexão encerrada")
-                    else:
-                        if recv_msg == "accept":
-                            print("Conexão aceita")
-                        else:
-                            print(f"Server: {recv_msg}")
+                return
+                
         except (socket.timeout, OSError):
             pass
-
+        
+        if recv_msg != "":
+            if recv_msg == "exit":
+                print("Conexão encerrada")
+            else:
+                if recv_msg == "accept":
+                    print("Conexão aceita")
+                else:
+                    print(f"Server: {recv_msg}")
+                    
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
         self.escutar_mensagem(address)
