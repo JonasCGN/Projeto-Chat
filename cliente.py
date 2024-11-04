@@ -1,11 +1,11 @@
 import socket
 import sys
 
-# ADDRESS = "0.tcp.sa.ngrok.io"
-# SERVER_POST = 18622
-SERVER_POST = 9000
+ADDRESS = "0.tcp.sa.ngrok.io"
+SERVER_POST = 18622
+# SERVER_POST = 9000
 BUFFER = 1024
-ADDRESS = "127.0.0.1"
+# ADDRESS = "127.0.0.1"
 
 class Cliente:
 
@@ -61,9 +61,9 @@ class Cliente:
     def escutar_mensagem(self, address):
         try:
             address.settimeout(2)
-            recv_msg = address.recv(BUFFER).decode("ascii")
+            recv_msg:str = address.recv(BUFFER).decode("ascii")
 
-            if recv_msg == 'banned':
+            if recv_msg == 'banned' or recv_msg.startswith('disconnected'):
                 self.ativo = False
                 address.close()
                 return
@@ -79,7 +79,6 @@ class Cliente:
         except (socket.timeout, OSError):
             pass
         
-                    
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
         self.escutar_mensagem(address)

@@ -137,9 +137,10 @@ class Servidor:
             for nome_cliente, cliente_destino in self.clientes.items():
                 if nome_cliente == nome_recebido:
                     if cliente_send.palavroes_falados():
-                        self.banidos.append(cliente_send.cliente_addrs)
+                        self.banidos.append(cliente_send.cliente_addrs[0])
+                        
                         cliente_send.cliente_socket.send("banned".encode())
-                        print(f"Cliente {cliente_send.cliente_addrs} foi banido.")
+                        print(f"Cliente {cliente_send.cliente_addrs[0]} foi banido.")
                         raise ConnectionAbortedError
                         
                     cliente_destino.cliente_socket.send(mensagem.encode())
