@@ -12,7 +12,8 @@ class Cliente:
     def __init__(self):
         self.tcp_connection = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.name = ""
-
+        self.ativo = True
+        
     def __call__(self):
         try:
             destination = (ADDRESS, SERVER_POST)
@@ -33,33 +34,48 @@ class Cliente:
             sys.exit()
 
     def enviar_mensagem(self, address):
-        while True:
-            username = input("Username: ")
-            if username != "":
-                mensagem = input("Voce: ")
+        try:
+            address.settimeout(2)
+            msg_recebida: str = address.recv(BUFFER).decode()
 
-                if mensagem != "":
-                    mensagem = f"{username}, {mensagem}"
-                    address.send(bytes(mensagem, "utf-8"))
-                    
-                    break
-            else:
-                print("Username inválido")
+            if msg_recebida == 'banned':
+                self.ativo = False
+                address.close()
+
+        except (socket.timeout, OSError):
+            while True:
+                username = input("Username: ")
+                if username != "":
+                    mensagem = input("Voce: ")
+
+                    if mensagem != "":
+                        mensagem = f"{username}, {mensagem}"
+                        address.send(bytes(mensagem, "utf-8"))
+                        
+                        break
+                else:
+                    print("Username inválido")
 
     def escutar_mensagem(self, address):
-        while True:
+        try:
+            address.settimeout(2)
             recv_msg = address.recv(BUFFER).decode("ascii")
 
-            if recv_msg != "":
-                if recv_msg == "exit":
-                    print("Conexão encerrada")
-                    break
-                else:
-                    if recv_msg == "accept":
-                        print("Conexão aceita")
+            if recv_msg == 'banned':
+                self.ativo = False
+                address.close()
+
+            else:
+                if recv_msg != "":
+                    if recv_msg == "exit":
+                        print("Conexão encerrada")
                     else:
-                        print(f"Server: {recv_msg}")
-                    break
+                        if recv_msg == "accept":
+                            print("Conexão aceita")
+                        else:
+                            print(f"Server: {recv_msg}")
+        except (socket.timeout, OSError):
+            print("Tempo limite excedido")
 
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
@@ -71,6 +87,10 @@ class Cliente:
 
     def menu(self):
         while True:
+            if not self.ativo:
+                print(f"Voce foi BANIDO!!!!")
+                return
+        
             print("1 - Enviar mensagem")
             print("2 - Escutar mensagem")
             print("3 - Enviar e Escutar mensagem")
@@ -89,7 +109,6 @@ class Cliente:
                 self.enviar_e_escutar_mensagem(self.tcp_connection)
             else:
                 print("Opção inválida")
-
 
 if __name__ == "__main__":
 

@@ -44,7 +44,6 @@ class TratamentoDeMensagem:
                 message = message.replace(palavra, "*" * len(palavra))
         return message
 
-
 class Cliente:
     def __init__(self, cliente_socket, cliente_addrs) -> None:
         self.cliente_socket: socket.socket = cliente_socket
@@ -59,8 +58,9 @@ class Cliente:
     def palavroes_falados(self):
         fim = datetime.datetime.now()
         inicio = fim - datetime.timedelta(minutes=1)
-        
-        return len([data for data in self.data_palavroes if inicio <= data <= fim]) >= 3
+        palavroes = len([data for data in self.data_palavroes if inicio <= data <= fim])
+        print(palavroes)
+        return palavroes >= 3
 
 class Servidor:
 
@@ -68,7 +68,7 @@ class Servidor:
         self.addr = (HOST, PORT)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self._clientes: dict[str, Cliente] = {}
-        self.banidos: list[Cliente] = []
+        self.banidos: list[str] = []
         self.tratamento_de_mensagem = TratamentoDeMensagem()
 
     def init(self):
@@ -82,8 +82,10 @@ class Servidor:
 
     def is_banned(self, cliente_addrs):
         is_ok = False
-        if cliente_addrs[0] in [cliente.cliente_addrs[0] for cliente in self.banidos]:
+        
+        if cliente_addrs[0] in [cliente for cliente in self.banidos]:
             is_ok = True
+            
         return is_ok
 
     def is_suport_connect(self):
@@ -107,23 +109,17 @@ class Servidor:
         if self.is_banned(client_addr):
             client_socket.send("disconnected: Voce foi banido!".encode())
             client_socket.close()
-            situcao = 0
 
         elif not self.is_suport_connect():
             client_socket.send("disconnected: Servidor cheio!".encode())
             client_socket.close()
-            situcao = 1
 
         else:
             if not (self.__add_clientes(client_addr, client_socket, name)):
                 client_socket.send("disconnected: Nome em uso!".encode())
                 client_socket.close()
-                situcao = 2
             else:
                 client_socket.send("connected: conectado!".encode())
-                situcao = 3
-
-        print(f"{client_addr}: situacao -> {situcao}")
 
     def handle_client(self, cliente_send: Cliente, name_send):
         try:
@@ -135,10 +131,17 @@ class Servidor:
                 raise ConnectionResetError
 
             nome_recebido, mensagem = msg_recebida.split(", ", 1)
-
+            cliente_send.add_data_palavroes(mensagem)
+            
             mensagem = self.tratamento_de_mensagem.msg_censurada(mensagem)
             for nome_cliente, cliente_destino in self.clientes.items():
                 if nome_cliente == nome_recebido:
+                    if cliente_send.palavroes_falados():
+                        self.banidos.append(cliente_send.cliente_addrs)
+                        cliente_send.cliente_socket.send("banned".encode())
+                        print(f"Cliente {cliente_send.cliente_addrs} foi banido.")
+                        raise ConnectionAbortedError
+                        
                     cliente_destino.cliente_socket.send(mensagem.encode())
 
         except socket.timeout:
