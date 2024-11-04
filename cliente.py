@@ -67,18 +67,18 @@ class Cliente:
                 self.ativo = False
                 address.close()
                 return
-                
+            else:
+                if recv_msg != "":
+                    if recv_msg == "exit":
+                        print("Conexão encerrada")
+                    else:
+                        if recv_msg == "accept":
+                            print("Conexão aceita")
+                        else:
+                            print(f"Server: {recv_msg}")
         except (socket.timeout, OSError):
             pass
         
-        if recv_msg != "":
-            if recv_msg == "exit":
-                print("Conexão encerrada")
-            else:
-                if recv_msg == "accept":
-                    print("Conexão aceita")
-                else:
-                    print(f"Server: {recv_msg}")
                     
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
