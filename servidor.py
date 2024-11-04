@@ -159,5 +159,8 @@ if __name__ == "__main__":
             servidor.connect_user()
             continue
 
-        for name, cliente in servidor.clientes.items():
-            servidor.handle_client(cliente, name)
+        try:
+            for name, cliente in servidor.clientes.items():
+                servidor.handle_client(cliente, name)
+        except RuntimeError:
+            print("Alerta: Um cliente foi desconectado.")
