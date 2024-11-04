@@ -1,8 +1,10 @@
-dicionario = {}
-dicionario['jonas'] = {'nome': 'João', 'idade': 25}
-dicionario['jose'] = {'nome': 'João', 'idade': 25}
-print(dicionario)
+import datetime
 
-dicionario.pop('jonas')
+fim = datetime.datetime.now()
+        inicio = fim - datetime.timedelta(minutes=1)
 
-print(dicionario)
+        utimos_3_minutos = self.data_palavroes[-3:]
+        if 
+        
+
+        return len(resultado)

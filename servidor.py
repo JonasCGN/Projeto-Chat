@@ -12,114 +12,152 @@
 #  ○ Caso o cliente mande 3 mensagens indevidas no período de 1 minuto, ele deve ser banido e as
 # mensagens dele não serão mais transmitidas.
 import socket
-import threading
 import datetime
 
 BUFFER = 1024
-HOST = ""
+HOST = "127.0.0.1"
 PORT = 9000
 PALAVRAS_BANIDA = [
-    "buceta", "caralho", "pika", "rolao", "cachorra", "safada", "vagabunda",
-    "pih da moiangaba", "puta", "tijolinho", "amigo de o3", "emilly"
-                   ]
-NMR_CLIENTES = 3
+    "buceta",
+    "caralho",
+    "pika",
+    "rolao",
+    "cachorra",
+    "safada",
+    "vagabunda",
+    "pih da moiangaba",
+    "puta",
+    "tijolinho",
+    "amigo de o3",
+    "emilly",
+]
+NMR_CLIENTES = 2
+
+
+class TratamentoDeMensagem:
+    def is_palavrao(self, message):
+        return message.lower() in [i.lower() for i in PALAVRAS_BANIDA]
+
+    def msg_censurada(self, message: str) -> str:
+        for palavra in PALAVRAS_BANIDA:
+            if palavra in message:
+                message = message.replace(palavra, "*" * len(palavra))
+        return message
+
 
 class Cliente:
-    def __init__(self, client_addr, cliente_socket, user_name) -> None:
-        self.client_addr = client_addr
-        self.cliente_socket = cliente_socket
-        self.user_name = user_name
-        self.palavroes:list[datetime.datetime] = []
-    
-    def add_palavroes(self,message):
-        if message.lower() in [i.lower() for i in PALAVRAS_BANIDA]:
-            self.palavroes.append(datetime.datetime.now())
-    
+    def __init__(self, cliente_socket, cliente_addrs) -> None:
+        self.cliente_socket: socket.socket = cliente_socket
+        self.cliente_addrs = cliente_addrs
+        self.data_palavroes: list[datetime.datetime] = []
+        self.tratamento_msg = TratamentoDeMensagem()
+
+    def add_data_palavroes(self, message):
+        if self.tratamento_msg.is_palavrao(message):
+            self.data_palavroes.append(datetime.datetime.now())
+
     def palavroes_falados(self):
         fim = datetime.datetime.now()
-        inicio = fim - datetime.timedelta(minutes=1)
-        
-        retorno = False
+        inicio = fim - datetime.timedelta(minutes=3)
+        return len([data for data in self.data_palavroes if inicio <= data <= fim])
 
-        resultado = [i for i in self.palavroes[-3:] if i.date() == datetime.datetime.now().date()]
-        resultado = [i for i in resultado if i.time().minute >= inicio.minute and i.time().minute <= fim.minute]
-        
-        if len(resultado) >= 3:
-            retorno = True
-            
-        return retorno
 
 class Servidor:
 
     def __init__(self):
         self.addr = (HOST, PORT)
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.clientes: list[Cliente] = {}
-        self.banidos = []
+        self._clientes: dict[str, Cliente] = {}
+        self.banidos: list[Cliente] = []
+        self.tratamento_de_mensagem = TratamentoDeMensagem()
 
-    def __call__(self):
+    def init(self):
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(self.addr)
-        self.server_socket.listen(10)
+        self.server_socket.listen(NMR_CLIENTES)
 
-        threading.Thread(target=self.thread_connect_users).start()
+    @property
+    def clientes(self):
+        return self._clientes
 
-    def tratamento_msg(self, cliente_socket):
-        data = cliente_socket.recv(BUFFER)
-        text_data: str = data.decode()
-        
-        name, msg = text_data.split(", ")
+    def is_banned(self, cliente_addrs):
+        is_ok = False
+        if cliente_addrs[0] in [cliente.cliente_addrs[0] for cliente in self.banidos]:
+            is_ok = True
+        return is_ok
 
-        for cliente in self.clientes.values():
-            if cliente.user_name == name:
-                self.clientes[cliente_socket].add_palavroes(msg)
-                cliente.cliente_socket.send(msg.encode())
+    def is_suport_connect(self):
+        is_ok = True
+        if len(self.clientes) >= NMR_CLIENTES:
+            is_ok = False
+        return is_ok
 
-    def tread_msg_users(self, cliente_socket: socket.socket, client_addr):
-        banido = False
-        while True:
-            if self.clientes[cliente_socket].palavroes_falados():
-                print(f"{client_addr}: Desconectado (banned)")
-                banido = True
-                break
-            try:
-                self.tratamento_msg(cliente_socket)
-            except ConnectionAbortedError:
-                print(f"{client_addr}: Desconectado (abort)")
-                break
-            except ConnectionResetError:
-                print(f"{client_addr}: Desconectado (reset)")
-                break
-            
-        self.remove_cliente(cliente_socket)
-        if banido:
-            cliente_socket.close()
+    def __add_clientes(self, cliente_addrs, cliente_socket, user_name) -> bool:
+        is_add = True
+        if user_name in self.clientes:
+            is_add = False
+        else:
+            self.clientes[user_name] = Cliente(cliente_socket, cliente_addrs)
+        return is_add
 
-    def thread_connect_users(self):
-        while True:
-            log = ""
+    def connect_user(self):
+        client_socket, client_addr = self.server_socket.accept()
+        name = client_socket.recv(BUFFER).decode()
 
-            client_socket, client_addr = self.server_socket.accept()
-            if len(self.clientes) < NMR_CLIENTES:
-                name = client_socket.recv(BUFFER).decode()
-                
-                cliente_atual = Cliente(client_addr, client_socket, name)
-                self.clientes[client_socket] = cliente_atual
-                
-                log = f"Cliente {client_addr} conectado."
-                client_socket.send("accept".encode())
-                threading.Thread(
-                    target=self.tread_msg_users, args=(client_socket, client_addr)
-                ).start()
-            else:
-                log = f"Cliente {client_addr} recusado. Limite de conexões atingido."
-                client_socket.send("exit".encode())
+        if self.is_banned(client_addr):
+            client_socket.send("disconnected: Voce foi banido!".encode())
+            client_socket.close()
+            situcao = 0
+
+        elif not self.is_suport_connect():
+            client_socket.send("disconnected: Servidor cheio!".encode())
+            client_socket.close()
+            situcao = 1
+
+        else:
+            if not (self.__add_clientes(client_addr, client_socket, name)):
+                client_socket.send("disconnected: Nome em uso!".encode())
                 client_socket.close()
+                situcao = 2
+            else:
+                client_socket.send("connected: conectado!".encode())
+                situcao = 3
 
-            print(log)
+        print(f"{client_addr}: situacao -> {situcao}")
 
-    def remove_cliente(self, cliente):
-        self.clientes.pop(cliente)
-        
+    def handle_client(self, cliente_send: Cliente, name_send):
+        try:
+            cliente_send.cliente_socket.settimeout(2)
+            msg_recebida: str = cliente.cliente_socket.recv(BUFFER).decode()
+            cliente_send.cliente_socket.settimeout(None)
+
+            if msg_recebida == "":
+                raise ConnectionResetError
+
+            nome_recebido, mensagem = msg_recebida.split(", ", 1)
+
+            mensagem = self.tratamento_de_mensagem.msg_censurada(mensagem)
+            for nome_cliente, cliente_destino in self.clientes.items():
+                if nome_cliente == nome_recebido:
+                    cliente_destino.cliente_socket.send(mensagem.encode())
+
+        except socket.timeout:
+            print(f"Tempo limite excedido para o cliente {cliente.cliente_addrs}.")
+
+        except (ConnectionResetError, ConnectionAbortedError):
+            print(f"Cliente {cliente.cliente_addrs} desconectado.")
+            self.clientes.pop(name_send)
+
+
 if __name__ == "__main__":
-    Servidor()()
+    servidor = Servidor()
+    servidor.init()
+
+    while True:
+        if servidor.is_suport_connect():
+            print("Adicione um cliente para continuar")
+            servidor.connect_user()
+            continue
+
+        for name, cliente in servidor.clientes.items():
+            servidor.handle_client(cliente, name)
