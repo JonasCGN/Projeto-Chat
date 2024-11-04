@@ -41,10 +41,8 @@ class Cliente:
 
                 if mensagem != "":
                     mensagem = f"{username}, {mensagem}"
-
                     address.send(bytes(mensagem, "utf-8"))
-                    if mensagem == "exit":
-                        print("Conexão encerrada")
+                    
                     break
             else:
                 print("Username inválido")
