@@ -63,7 +63,7 @@ class Cliente:
             address.settimeout(2)
             recv_msg:str = address.recv(BUFFER).decode("ascii")
 
-            if recv_msg == 'banned' or recv_msg.startswith('disconnected'):
+            if recv_msg == 'banned':
                 self.ativo = False
                 address.close()
                 return
