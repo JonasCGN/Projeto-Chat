@@ -5,7 +5,7 @@ import sys
 # SERVER_POST = 18842
 SERVER_POST = 9000
 BUFFER = 1024
-ADDRESS = "127.0.0.1"
+ADDRESS = "192.168.1.15"
 
 class Cliente:
 
@@ -59,11 +59,12 @@ class Cliente:
                 print("Username inválido")
 
     def escutar_mensagem(self, address):
+        
         try:
-            address.settimeout(2)
+            # address.settimeout(2)
             recv_msg:str = address.recv(BUFFER).decode("ascii")
 
-            if recv_msg == 'banned' or recv_msg.startswith('disconnected'):
+            if recv_msg == 'banned':
                 self.ativo = False
                 address.close()
                 return
@@ -76,8 +77,12 @@ class Cliente:
                             print("Conexão aceita")
                         else:
                             print(f"Server: {recv_msg}")
-        except (socket.timeout, OSError):
+        except (socket.timeout, OSError, TimeoutError):
             pass
+    
+    def escutar_mensagem_continuamente(self, address):
+        while True:
+            self.escutar_mensagem(address)
         
     def enviar_e_escutar_mensagem(self, address):
         self.enviar_mensagem(address)
@@ -95,7 +100,9 @@ class Cliente:
         
             print("1 - Enviar mensagem")
             print("2 - Escutar mensagem")
-            print("3 - Enviar e Escutar mensagem")
+            print("3 - Escutar mensagem continuamente")
+            print("4 - Enviar e Escutar mensagem")
+            
             print("0 - Sair")
 
             option = input("Opção: ")
@@ -108,6 +115,8 @@ class Cliente:
             elif option == "2":
                 self.escutar_mensagem(self.tcp_connection)
             elif option == "3":
+                self.escutar_mensagem_continuamente(self.tcp_connection)
+            elif option == "4":
                 self.enviar_e_escutar_mensagem(self.tcp_connection)
             else:
                 print("Opção inválida")

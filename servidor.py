@@ -15,7 +15,7 @@ import socket
 import datetime
 
 BUFFER = 1024
-HOST = "127.0.0.1"
+HOST = "192.168.1.15"
 PORT = 9000
 PALAVRAS_BANIDA = [
     "buceta",
@@ -31,8 +31,7 @@ PALAVRAS_BANIDA = [
     "amigo de o3",
     "emilly",
 ]
-NMR_CLIENTES = 2
-
+NMR_CLIENTES = 3
 
 class TratamentoDeMensagem:
     def is_palavrao(self, message):
@@ -108,7 +107,7 @@ class Servidor:
         name = client_socket.recv(BUFFER).decode()
 
         if self.is_banned(name):
-            client_socket.send("disconnected: Voce foi banido!".encode())
+            client_socket.send("banned: Voce foi banido!".encode())
             client_socket.close()
 
         elif not self.is_suport_connect():
@@ -120,6 +119,7 @@ class Servidor:
                 client_socket.send("disconnected: Nome em uso!".encode())
                 client_socket.close()
             else:
+                print(f"Cliente {name} conectado.")
                 client_socket.send("connected: conectado!".encode())
 
     def handle_client(self, cliente_send: Cliente, name_send):
